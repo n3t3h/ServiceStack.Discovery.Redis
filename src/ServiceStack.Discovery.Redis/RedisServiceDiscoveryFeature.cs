@@ -83,6 +83,13 @@ namespace ServiceStack.Discovery.Redis
         public string TypeFullName { get; set; }
     }
 
+    public enum RoutingType
+    {
+        First = 1,
+        RoundRobin = 2,
+        TrstretchRoutine = 3
+    }
+
     /// <summary>
     /// Provides Redis backed service-discovery for ServiceStack 4.0.56 or greater    
     /// </summary>
@@ -166,6 +173,8 @@ namespace ServiceStack.Discovery.Redis
         }
 
         public string HostName { get; set; } = Dns.GetHostName();
+
+        public RoutingType RoutingType { get; set; } = RoutingType.First;
 
         /// <summary>
         /// Is this node also the HostMaster?
@@ -326,6 +335,7 @@ namespace ServiceStack.Discovery.Redis
 
     public class RedisServiceDiscoveryServices : Service
     {
+        public static int RequestCounter;
         public Dictionary<string, string> Any(ResolveNodesForRequest req)
         {
             if (req.TypeFullName.IsEmpty())
@@ -341,7 +351,18 @@ namespace ServiceStack.Discovery.Redis
 
         public string Any(ResolveBaseUrl req)
         {
-            return Any(req.ConvertTo<ResolveNodesForRequest>())?.First().Value;
+            RequestCounter++;
+            switch (HostContext.GetPlugin<RedisServiceDiscoveryFeature>().RoutingType)
+            {
+                case RoutingType.First:
+                    return Any(req.ConvertTo<ResolveNodesForRequest>())?.First().Value;
+                case RoutingType.RoundRobin:
+                    var rt = Any(req.ConvertTo<ResolveNodesForRequest>());
+                    var ds = rt?.ToList()[RequestCounter % rt.Count];
+                    return ds?.Value;
+                default:
+                    return null;
+            }
         }
         public List<RedisDiscoveryNodeInfo> Any(GetActiveNodes req)
         {
