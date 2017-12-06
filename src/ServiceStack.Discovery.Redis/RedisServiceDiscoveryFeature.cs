@@ -357,20 +357,9 @@ namespace ServiceStack.Discovery.Redis
                 case RoutingType.First:
                     return Any(req.ConvertTo<ResolveNodesForRequest>())?.First().Value;
                 case RoutingType.RoundRobin:
-                    var rt = Any(req.ConvertTo<ResolveNodesForRequest>());
-                    if (null != rt)
-                    {
-                        if (rt.Count > 1)
-                        {
-                            var ds = rt.ToList()[RequestCounter % rt.Count];
-                            return ds.Value;
-                        }
-                        if (rt.Count == 1)
-                        {
-                            return rt.ToList()[0].Value;
-                        }
-                    }
-                    
+                    var rt = Any(req.ConvertTo<ResolveNodesForRequest>());                    
+                    var ds = rt?.ToList()[RequestCounter % rt.Count];
+                    return ds?.Value;
                 default:
                     return null;
             }
