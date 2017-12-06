@@ -365,7 +365,7 @@ namespace ServiceStack.Discovery.Redis
                             var ds = rt.ToList()[RequestCounter % rt.Count];
                             return ds.Value;
                         }
-                        if (rt == 1)
+                        if (rt.Count == 1)
                         {
                             return rt.ToList()[0].Value;
                         }
